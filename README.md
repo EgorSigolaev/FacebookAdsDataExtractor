@@ -4,10 +4,11 @@
 
 Get rid of MMP for attributing Facebook Ads
 
-## IMPORTANT: Publish your app before implementing library.
+## IMPORTANT: Publish your app in Google Play before implementing the library.
 Facebook Install Referrer Decryption Key is required. Otherwise the library will not be able to get installs data. 
+You can get it from the link https://developers.facebook.com/apps/<your app id>/settings/basic/
 
-## Add the library to a project
+## Add the library to the project
 
 ```groovy
 allprojects {
@@ -80,6 +81,36 @@ FacebookDataExtractor.test(
                         platform=instagram
                     )
                      */
+                }
+
+                override fun onError(error: FacebookDataExtractor.Error) {
+                    // Handle potential errors
+                }
+            })
+```
+
+## Firebase setup example
+This library can also be used with Firebase to attribute users from Facebook Ads and measure their LTV, ad revenue, RR, etc.
+1) Add Firebase analytics dependency
+2) Create custom definitions that you want to use as its shown below
+<img width="641" alt="Screenshot1" src="https://github.com/EgorSigolaev/FacebookAdsDataExtractor/assets/44138374/ab2eeedd-6a64-46dc-86aa-bdf6e5f8b0ab">
+
+3) Handle Callback#onSuccess and set user properties with Firebase SDK
+```kotlin
+object : FacebookDataExtractor.Callback{
+                override fun onSuccess(data: FacebookDataExtractor.FacebookData?) {
+                    if(data == null){
+                        // Install source is likely not Facebook Ads
+                        return
+                    }
+                    val analytics = FirebaseAnalytics.getInstance(context)
+                    analytics.setUserProperty("fb_account_id", data.accountId)
+                    analytics.setUserProperty("fb_ad_id", data.adId)
+                    analytics.setUserProperty("fb_ad_name", data.adId)
+                    analytics.setUserProperty("fb_ad_set_id", data.adSetId)
+                    analytics.setUserProperty("fb_ad_set_name", data.adSetName)
+                    analytics.setUserProperty("fb_campaign_id", data.campaignId)
+                    analytics.setUserProperty("fb_campaign_name", data.campaignName)
                 }
 
                 override fun onError(error: FacebookDataExtractor.Error) {
