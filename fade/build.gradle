@@ -28,6 +28,12 @@ android {
     kotlinOptions {
         jvmTarget = '1.8'
     }
+    publishing {
+        singleVariant("release") {
+            withSourcesJar()
+            withJavadocJar()
+        }
+    }
 }
 
 
@@ -45,15 +51,15 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
 }
 
-afterEvaluate {
-    publishing{
-        publications {
-            release(MavenPublication){
-                from components.release
+publishing {
+    publications {
+        release(MavenPublication) {
+            groupId = 'com.EgorSigolaev'
+            artifactId = 'FacebookAdsDataExtractor'
+            version = '1.0'
 
-                groupId = 'com.EgorSigolaev'
-                artifactId = 'FacebookAdsDataExtractor'
-                version = '1.0'
+            afterEvaluate {
+                from components.release
             }
         }
     }
