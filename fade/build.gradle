@@ -51,8 +51,8 @@ afterEvaluate {
             release(MavenPublication){
                 from components.release
 
-                groupId = 'com.egorsigolaev'
-                artifactId = 'fade'
+                groupId = 'com.EgorSigolaev'
+                artifactId = 'FacebookAdsDataExtractor'
                 version = '1.0'
             }
         }
