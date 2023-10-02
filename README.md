@@ -6,7 +6,8 @@ Get rid of MMP for attributing Facebook Ads
 
 ## IMPORTANT: Publish your app in Google Play before implementing the library.
 Facebook Install Referrer Decryption Key is required. Otherwise the library will not be able to get installs data. 
-You can get it from the link https://developers.facebook.com/apps/<your app id>/settings/basic/
+You can get it from the link https://developers.facebook.com/apps/your-app-id/settings/basic
+
 
 ## Add the library to the project
 
@@ -90,7 +91,7 @@ FacebookDataExtractor.test(
 ```
 
 ## Firebase setup example
-This library can also be used with Firebase to attribute users from Facebook Ads and measure their LTV, ad revenue, RR, etc.
+This library can also be used with Firebase to attribute users from Facebook Ads and measure LTV, ad revenue, RR, etc.
 1) Add Firebase analytics dependency
 2) Create custom definitions that you want to use as its shown below
 <img width="641" alt="Screenshot1" src="https://github.com/EgorSigolaev/FacebookAdsDataExtractor/assets/44138374/ab2eeedd-6a64-46dc-86aa-bdf6e5f8b0ab">
