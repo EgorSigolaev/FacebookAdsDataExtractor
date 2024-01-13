@@ -6,6 +6,11 @@ import android.content.Context
 import android.util.Log
 import com.android.installreferrer.api.InstallReferrerClient
 import com.android.installreferrer.api.InstallReferrerStateListener
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import org.json.JSONException
 import org.json.JSONObject
 import java.lang.Exception
@@ -22,23 +27,27 @@ object FacebookDataExtractor {
     fun initialize(context: Context, facebookDecryptionKey: String, callback: Callback){
         this.callback = callback
         this.facebookDecryptionKey = facebookDecryptionKey.trim()
-        initialize(context.applicationContext)
-    }
-
-    fun test(context: Context, installReferrer: String, facebookDecryptionKey: String, callback: Callback){
-        this.callback = callback
-        this.facebookDecryptionKey = facebookDecryptionKey
-        try {
-            val data = extractFacebookData(installReferrer)
-            FacebookDataExtractor.callback.onSuccess(data)
-        }catch (e: Error){
-            FacebookDataExtractor.callback.onError(e)
-        }catch (e: Exception){
-            FacebookDataExtractor.callback.onError(Error.Unknown("Unknown error: ${e.message}"))
+        CoroutineScope(Dispatchers.IO).launch{
+            initialize(context.applicationContext)
         }
     }
 
-    private fun initialize(context: Context){
+    fun test(installReferrer: String, facebookDecryptionKey: String, callback: Callback){
+        this.callback = callback
+        this.facebookDecryptionKey = facebookDecryptionKey
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val data = extractFacebookData(installReferrer)
+                FacebookDataExtractor.callback.onSuccess(data)
+            }catch (e: Error){
+                FacebookDataExtractor.callback.onError(e)
+            }catch (e: Exception){
+                FacebookDataExtractor.callback.onError(Error.Unknown("Unknown error: ${e.message}"))
+            }
+        }
+    }
+
+    private suspend fun initialize(context: Context){
         if(facebookDecryptionKey.isEmpty()){
             callback.onError(Error.InvalidDecryptionKey("Facebook Install Referrer Decryption Key can't be empty"))
             return
@@ -54,7 +63,9 @@ object FacebookDataExtractor {
                     InstallReferrerClient.InstallReferrerResponse.OK -> {
                         val installReferrer = referrerClient.installReferrer.installReferrer
                         try {
-                            val data = extractFacebookData(installReferrer)
+                            val data = runBlocking {
+                                extractFacebookData(installReferrer)
+                            }
                             callback.onSuccess(data)
                         }catch (e: Error){
                             callback.onError(e)
@@ -76,7 +87,7 @@ object FacebookDataExtractor {
         })
     }
 
-    private fun extractFacebookData(installReferrer: String): FacebookData?{
+    private suspend fun extractFacebookData(installReferrer: String): FacebookData?{
         val referrerParams = getReferrerParams(installReferrer)
         return if(referrerParams["utm_source"] == "apps.facebook.com" && referrerParams["utm_campaign"] == "fb4a"){
             referrerParams["utm_content"]?.let { content ->
@@ -106,7 +117,7 @@ object FacebookDataExtractor {
         }
     }
 
-    private fun getReferrerParams(installReferrer: String): Map<String, String>{
+    private suspend fun getReferrerParams(installReferrer: String): Map<String, String>{
         val map = HashMap<String, String>()
         installReferrer.split("&").forEach {
             val parts = it.split("=")
