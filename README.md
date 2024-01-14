@@ -19,7 +19,7 @@ allprojects {
 }
 
 dependencies {
-    implementation "com.github.EgorSigolaev:FacebookAdsDataExtractor:1.0"
+    implementation "com.github.EgorSigolaev:FacebookAdsDataExtractor:latest.version"
 }
 ```
 
