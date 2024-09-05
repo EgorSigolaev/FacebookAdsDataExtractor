@@ -96,28 +96,102 @@ This library can also be used with Firebase to attribute users from Facebook Ads
 2) Create custom definitions that you want to use as its shown below
 <img width="641" alt="Screenshot1" src="https://github.com/EgorSigolaev/FacebookAdsDataExtractor/assets/44138374/ab2eeedd-6a64-46dc-86aa-bdf6e5f8b0ab">
 
-3) Handle Callback#onSuccess and set user properties with Firebase SDK
+3) Firebase SDK sample. It's important to set user properties **BEFORE** Firebase SDK initialization. Disable auto initialization in your manifest.
 ```kotlin
 object : FacebookDataExtractor.Callback{
-                override fun onSuccess(data: FacebookDataExtractor.FacebookData?) {
-                    if(data == null){
-                        // Install source is likely not Facebook Ads
-                        return
-                    }
-                    val analytics = FirebaseAnalytics.getInstance(context)
-                    analytics.setUserProperty("fb_account_id", data.accountId)
-                    analytics.setUserProperty("fb_ad_id", data.adId)
-                    analytics.setUserProperty("fb_ad_name", data.adId)
-                    analytics.setUserProperty("fb_ad_set_id", data.adSetId)
-                    analytics.setUserProperty("fb_ad_set_name", data.adSetName)
-                    analytics.setUserProperty("fb_campaign_id", data.campaignId)
-                    analytics.setUserProperty("fb_campaign_name", data.campaignName)
-                }
+                override fun onComplete(result: FacebookDataExtractor.Result) {
+                    when(result){
+                        is FacebookDataExtractor.Result.Success -> {
+                            result.data?.let { facebookData ->
+                                Log.d(TAG, "Facebook install data: $facebookData")
+                                val analytics = FirebaseAnalytics.getInstance(context)
+                                analytics.setUserProperty("fb_account_id", facebookData.accountId)
+                                analytics.setUserProperty("fb_ad_id", facebookData.adId)
+                                analytics.setUserProperty("fb_ad_name", facebookData.adId)
+                                analytics.setUserProperty("fb_ad_set_id", facebookData.adSetId)
+                                analytics.setUserProperty("fb_ad_set_name", facebookData.adSetName)
+                                analytics.setUserProperty("fb_campaign_id", facebookData.campaignId)
+                                analytics.setUserProperty("fb_campaign_name", facebookData.campaignName)
+                            } ?: run {
+                                Log.d(TAG, "Install source is not Facebook Ads")
+                            }
 
-                override fun onError(error: FacebookDataExtractor.Error) {
-                    // Handle potential errors
+                        }
+                        is FacebookDataExtractor.Result.Error -> {
+                            // Handle potential error
+                        }
+                    }
+                    // Initialize Firebase SDK
+                    FirebaseApp.initializeApp(this@MyApplication)
                 }
-            })
+            }
 ```
 
+4) Adapty SDK sample.
+```kotlin
+object : FacebookDataExtractor.Callback{
+                override fun onComplete(result: FacebookDataExtractor.Result) {
+                    // Initialize Adapty SDK
+                    Adapty.activate(applicationContext, AdaptyConfig.Builder("YOUR_SDK_KEY").build())
+                    when(result){
+                        is FacebookDataExtractor.Result.Success -> {
+                            result.data?.let { facebookData ->
+                                Log.d(TAG, "Facebook install data: $facebookData")
+                                val profileParameters = AdaptyProfileParameters.Builder()
+                                    .withCustomAttribute("fb_account_id", facebookData.accountId)
+                                    .withCustomAttribute("fb_ad_id", facebookData.adId)
+                                    .withCustomAttribute("fb_ad_name", facebookData.adId)
+                                    .withCustomAttribute("fb_ad_set_id", facebookData.adSetId)
+                                    .withCustomAttribute("fb_ad_set_name", facebookData.adSetName)
+                                    .withCustomAttribute("fb_campaign_id", facebookData.campaignId)
+                                    .withCustomAttribute("fb_campaign_name", facebookData.campaignName)
+                                    .build()
+                                Adapty.updateProfile(profileParameters){
 
+                                }
+                            } ?: run {
+                                Log.d(TAG, "Install source is not Facebook Ads")
+                            }
+
+                        }
+                        is FacebookDataExtractor.Result.Error -> {
+                            // Handle potential error
+                        }
+                    }
+                }
+            }
+```
+
+5) RevenueCat SDK sample.
+```kotlin
+object : FacebookDataExtractor.Callback{
+                override fun onComplete(result: FacebookDataExtractor.Result) {
+                    when(result){
+                        is FacebookDataExtractor.Result.Success -> {
+                            result.data?.let { facebookData ->
+                                Log.d(TAG, "Facebook install data: $facebookData")
+
+                                Purchases.sharedInstance.setAttributes(mapOf(
+                                    "fb_account_id" to facebookData.accountId,
+                                    "fb_ad_id" to facebookData.adId,
+                                    "fb_ad_name" to facebookData.adName,
+                                    "fb_ad_set_id" to facebookData.adSetId,
+                                    "fb_ad_set_name" to facebookData.adSetName,
+                                    "fb_campaign_id" to facebookData.campaignId,
+                                    "fb_campaign_name" to facebookData.campaignName,
+                                ))
+                                
+                            } ?: run {
+                                Log.d(TAG, "Install source is not Facebook Ads")
+                            }
+
+                        }
+                        is FacebookDataExtractor.Result.Error -> {
+                            // Handle potential error
+                        }
+                    }
+                    // Initialize RevenueCat
+                    Purchases.configure(PurchasesConfiguration.Builder(applicationContext, "YOUR_SDK_KEY").build())
+                }
+            }
+```
