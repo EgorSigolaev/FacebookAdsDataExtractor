@@ -1,16 +1,12 @@
 package com.egorsigolaev.facebookadsdataextractor
 
-import android.app.Activity
-import android.app.Application
 import android.content.Context
-import android.util.Log
 import com.android.installreferrer.api.InstallReferrerClient
 import com.android.installreferrer.api.InstallReferrerStateListener
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 import org.json.JSONException
 import org.json.JSONObject
 import java.lang.Exception
@@ -38,22 +34,22 @@ object FacebookDataExtractor {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val data = extractFacebookData(installReferrer)
-                FacebookDataExtractor.callback.onSuccess(data)
+                FacebookDataExtractor.callback.onComplete(Result.Success(data))
             }catch (e: Error){
-                FacebookDataExtractor.callback.onError(e)
+                FacebookDataExtractor.callback.onComplete(Result.Error(e))
             }catch (e: Exception){
-                FacebookDataExtractor.callback.onError(Error.Unknown("Unknown error: ${e.message}"))
+                FacebookDataExtractor.callback.onComplete(Result.Error(Error.Unknown("Unknown error: ${e.message}")))
             }
         }
     }
 
     private suspend fun initialize(context: Context){
         if(facebookDecryptionKey.isEmpty()){
-            callback.onError(Error.InvalidDecryptionKey("Facebook Install Referrer Decryption Key can't be empty"))
+            callback.onComplete(Result.Error(Error.InvalidDecryptionKey("Facebook Install Referrer Decryption Key can't be empty")))
             return
         }
         if(facebookDecryptionKey.length % 2 != 0){
-            callback.onError(Error.InvalidDecryptionKey("Facebook Install Referrer Decryption Key must have an even length"))
+            callback.onComplete(Result.Error(Error.InvalidDecryptionKey("Facebook Install Referrer Decryption Key must have an even length")))
             return
         }
         val referrerClient = InstallReferrerClient.newBuilder(context).build()
@@ -66,18 +62,18 @@ object FacebookDataExtractor {
                             val data = runBlocking {
                                 extractFacebookData(installReferrer)
                             }
-                            callback.onSuccess(data)
+                            callback.onComplete(Result.Success(data))
                         }catch (e: Error){
-                            callback.onError(e)
+                            callback.onComplete(Result.Error(e))
                         }catch (e: Exception){
-                            callback.onError(Error.Unknown("Unknown error: ${e.message}"))
+                            callback.onComplete(Result.Error(Error.Unknown("Unknown error: ${e.message}")))
                         }
                     }
                     InstallReferrerClient.InstallReferrerResponse.FEATURE_NOT_SUPPORTED -> {
-                        callback.onError(Error.FeatureNotSupported)
+                        callback.onComplete(Result.Error(Error.FeatureNotSupported))
                     }
                     else -> {
-                        callback.onError(Error.Unknown("Referrer client error: $responseCode"))
+                        callback.onComplete(Result.Error(Error.Unknown("Referrer client error: $responseCode")))
                     }
                 }
                 referrerClient.endConnection()
@@ -160,8 +156,14 @@ object FacebookDataExtractor {
     )
 
     interface Callback{
-        fun onSuccess(data: FacebookData?)
-        fun onError(error: Error)
+        fun onComplete(result: Result)
+//        fun onSuccess(data: FacebookData?)
+//        fun onError(error: Error)
+    }
+
+    sealed class Result{
+        data class Success(val data: FacebookData?): Result()
+        data class Error(val error: FacebookDataExtractor.Error): Result()
     }
 
 }
